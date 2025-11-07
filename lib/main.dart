@@ -283,12 +283,27 @@ class NotesHomePage extends StatefulWidget {
 
 class _NotesHomePageState extends State<NotesHomePage> {
   final TextEditingController _searchController = TextEditingController();
+  // Implementasi setState() - Contoh state dasar untuk kontrol pencarian
+  bool _isSearchActive = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotesInheritedWidget.of(context)?.loadNotes();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Method menggunakan setState()
+  void _toggleSearchActive(bool value) {
+    setState(() {
+      _isSearchActive = value;
     });
   }
 
@@ -351,7 +366,7 @@ class _NotesHomePageState extends State<NotesHomePage> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -372,7 +387,10 @@ class _NotesHomePageState extends State<NotesHomePage> {
                   ),
                   child: TextField(
                     controller: _searchController,
-                    onChanged: notesState.searchNotes,
+                    onChanged: (value) {
+                      _toggleSearchActive(value.isNotEmpty);
+                      notesState.searchNotes(value);
+                    },
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       color: Colors.brown[800],
@@ -383,11 +401,12 @@ class _NotesHomePageState extends State<NotesHomePage> {
                         color: Colors.brown[400],
                       ),
                       prefixIcon: Icon(Icons.search, color: Colors.brown[700]),
-                      suffixIcon: notesState.searchQuery.isNotEmpty
+                      suffixIcon: _isSearchActive
                           ? IconButton(
                               icon: Icon(Icons.clear, color: Colors.brown[600]),
                               onPressed: () {
                                 _searchController.clear();
+                                _toggleSearchActive(false);
                                 notesState.clearSearch();
                               },
                             )
@@ -395,7 +414,7 @@ class _NotesHomePageState extends State<NotesHomePage> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 18,
+                        vertical: 16,
                       ),
                     ),
                   ),
@@ -413,55 +432,70 @@ class _NotesHomePageState extends State<NotesHomePage> {
                   )
                 : notesState.notes.isEmpty
                     ? SliverFillRemaining(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: Icon(
-                                  Icons.note_add_outlined,
-                                  size: 60,
-                                  color: Colors.white,
+                        hasScrollBody: false,
+                        child: Flex(
+                          direction: Axis.vertical,
+                          children: [
+                            Expanded(
+                              child: Center(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(50),
+                                        ),
+                                        child: Icon(
+                                          Icons.note_add_outlined,
+                                          size: 60,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 20),
+                                      Text(
+                                        notesState.searchQuery.isEmpty
+                                            ? 'Belum ada catatan'
+                                            : 'Tidak ada catatan yang cocok',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        notesState.searchQuery.isEmpty
+                                            ? 'Tap tombol + untuk membuat catatan pertama'
+                                            : 'Coba kata kunci yang berbeda',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          color: Colors.white.withOpacity(0.8),
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              SizedBox(height: 20),
-                              Text(
-                                notesState.searchQuery.isEmpty
-                                    ? 'Belum ada catatan'
-                                    : 'Tidak ada catatan yang cocok',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                notesState.searchQuery.isEmpty
-                                    ? 'Tap tombol + untuk membuat catatan pertama'
-                                    : 'Coba kata kunci yang berbeda',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       )
                     : SliverPadding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 16),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final note = notesState.notes[index];
                               return Padding(
-                                padding: EdgeInsets.only(bottom: 15),
+                                padding: EdgeInsets.only(bottom: 12),
                                 child: NoteCard(note: note),
                               );
                             },
@@ -470,7 +504,7 @@ class _NotesHomePageState extends State<NotesHomePage> {
                         ),
                       ),
             SliverToBoxAdapter(
-              child: SizedBox(height: 100), // Space for FAB
+              child: SizedBox(height: 80),
             ),
           ],
         ),
@@ -834,7 +868,7 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
                   ],
                 ),
               ),
-              // Content
+              // Content dengan SingleChildScrollView untuk handle overflow
               Expanded(
                 child: Container(
                   margin: EdgeInsets.all(16),
@@ -858,42 +892,42 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
                       ),
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _titleController,
-                        focusNode: _titleFocus,
-                        decoration: InputDecoration(
-                          hintText: 'Judul catatan...',
-                          hintStyle: GoogleFonts.poppins(
-                            color: Colors.brown[300],
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _titleController,
+                          focusNode: _titleFocus,
+                          decoration: InputDecoration(
+                            hintText: 'Judul catatan...',
+                            hintStyle: GoogleFonts.poppins(
+                              color: Colors.brown[300],
+                              fontSize: 24,
+                            ),
+                            border: InputBorder.none,
+                          ),
+                          style: GoogleFonts.poppins(
                             fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.brown[800],
                           ),
-                          border: InputBorder.none,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _contentFocus.requestFocus(),
                         ),
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.brown[800],
-                        ),
-                        textInputAction: TextInputAction.next,
-                        onSubmitted: (_) => _contentFocus.requestFocus(),
-                      ),
-                      Container(
-                        height: 1,
-                        margin: EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.brown[200]!,
-                              Colors.brown[100]!,
-                              Colors.brown[200]!,
-                            ],
+                        Container(
+                          height: 1,
+                          margin: EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.brown[200]!,
+                                Colors.brown[100]!,
+                                Colors.brown[200]!,
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: TextField(
+                        TextField(
                           controller: _contentController,
                           focusNode: _contentFocus,
                           decoration: InputDecoration(
@@ -910,11 +944,9 @@ class _AddEditNotePageState extends State<AddEditNotePage> {
                             height: 1.6,
                           ),
                           maxLines: null,
-                          expands: true,
-                          textAlignVertical: TextAlignVertical.top,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
